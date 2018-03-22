@@ -15,7 +15,8 @@ RUN echo '{{ install_type }} not yet available for {{ base_distro }}' \
 ADD monasca-api-archive /monasca-api-source
 
 {% set monasca_api_pip_packages = [
-    '/monasca-api'
+    '/monasca-api',
+    'gunicorn'
 ] %}
 
 RUN ln -s monasca-api-source/* monasca-api \
@@ -28,4 +29,3 @@ RUN ln -s monasca-api-source/* monasca-api \
 {% block footer %}{% endblock %}
 
 USER monasca
-
