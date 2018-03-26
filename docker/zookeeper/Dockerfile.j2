@@ -7,14 +7,34 @@ LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build
 
 {{ macros.configure_user(name='zookeeper') }}
 
-{% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
-    {% set zookeeper_packages = [
-        'zookeeper',
-    ] %}
-{% elif base_distro in ['debian', 'ubuntu'] %}
-    {% set zookeeper_packages = [
-        'zookeeper',
-    ] %}
+
+{% if install_type == 'binary' %}
+    {% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
+        {% set zookeeper_packages = [
+            'java-1.8.0-openjdk'
+            'zookeeper',
+        ] %}
+    {% elif base_distro in ['debian', 'ubuntu'] %}
+        {% set zookeeper_packages = [
+            'zookeeper',
+        ] %}
+    {% endif %}
+
+{% elif install_type == 'source' %}
+    {% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
+        {% set horizon_packages = [
+                'java-1.8.0-openjdk',
+                'zookeeper'
+        ] %}
+    {% elif base_distro in ['debian', 'ubuntu'] %}
+        {% set zookeeper_packages = [
+            'zookeeper',
+        ] %}
+{% endif %}
+
+RUN curl -Lo zookeeper.tar.gz 'https://github.com/apache/zookeeper/archive/release-3.4.11.tar.gz'
+RUN tar -xzf zookeeper.tar.gz -C /opt/zookeeper
+
 {% endif %}
 
 {{ macros.install_packages(zookeeper_packages | customizable("packages")) }}
