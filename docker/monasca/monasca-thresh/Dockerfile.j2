@@ -1,0 +1,59 @@
+FROM {{ namespace }}/{{ image_prefix }}monasca-base:{{ tag }}
+LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build_date }}"
+
+{% block monasca_thresh_header %}{% endblock %}
+
+{% import "macros.j2" as macros with context %}
+
+{% if install_type == 'binary' %}
+
+RUN echo '{{ install_type }} not yet available for {{ base_distro }}' \
+    && /bin/false
+
+{% elif install_type == 'source' %}
+
+ENV COMMON_REPO=https://git.openstack.org/openstack/monasca-common.git \
+  COMMON_BRANCH="master" \
+  THRESH_REPO=https://git.openstack.org/openstack/monasca-thresh.git \
+  THRESH_BRANCH="master"
+
+    {% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
+        {% set monasca_packages = [
+                ' java-1.8.0-openjdk',
+                ' mysql'
+                ' git'
+                ' maven'
+        ] %}
+    {% elif base_distro in ['debian', 'ubuntu'] %}
+RUN echo '{{ install_type }} not yet available for {{ base_distro }}' \
+    && /bin/false
+    {% endif %}
+
+{{ macros.install_packages(monasca_packages | customizable("packages")) }}
+
+RUN mkdir /monasca-common && cd /monasca-common && \
+  git init && \
+  git remote add origin $COMMON_REPO && \
+  git fetch origin $COMMON_BRANCH && \
+  git reset --hard FETCH_HEAD && \
+  mvn -B clean install && \
+  cd / && \
+  rm -rf /monasca-common
+RUN mkdir /monasca-thresh && cd /monasca-thresh && \
+  git init && \
+  git remote add origin $THRESH_REPO && \
+  git fetch origin $THRESH_BRANCH && \
+  git reset --hard FETCH_HEAD && \
+  cd thresh && \
+  mvn -B clean package && \
+  cp /monasca-thresh/thresh/target/*-SNAPSHOT-shaded.jar /monasca-thresh.jar && \
+  cd / && \
+  rm -rf /monasca-thresh
+
+{% endif %}
+
+{% block monasca_thresh_footer %}{% endblock %}
+
+{% block footer %}{% endblock %}
+
+USER monasca
